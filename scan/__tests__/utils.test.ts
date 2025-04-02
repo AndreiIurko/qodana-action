@@ -18,6 +18,8 @@ import {expect} from '@jest/globals'
 import {isNeedToUploadCache} from '../src/utils'
 import * as github from '@actions/github'
 import {ENABLE_USE_CACHE_OPTION_WARNING} from '../src/utils'
+import {Inputs} from '../../common/qodana'
+import * as os from 'os'
 
 const masterBranch = 'master'
 describe('isNeedToUploadCache', () => {
@@ -58,7 +60,10 @@ describe('isNeedToUploadCache', () => {
     jest.spyOn(core, 'warning')
     initGithubContext(masterBranch)
     isNeedToUploadCache(false, true)
-    expect(core.warning).toBeCalledWith(ENABLE_USE_CACHE_OPTION_WARNING)
+    expect(core.warning).toBeCalledWith(
+      ENABLE_USE_CACHE_OPTION_WARNING,
+      undefined
+    )
   })
 })
 
@@ -69,4 +74,28 @@ export function initGithubContext(currentBranch: string): void {
       payload: {repository: {default_branch: masterBranch}}
     }
   })
+}
+
+export const defaultGithubToken = 'Github token'
+
+function getDefaultInputs(projectDir: string): Inputs {
+  return {
+    args: [],
+    resultsDir: `${os.tmpdir()}/qodana/results`,
+    cacheDir: `${os.tmpdir()}/qodana/caches`,
+    primaryCacheKey: projectDir,
+    additionalCacheKey: projectDir,
+    cacheDefaultBranchOnly: false,
+    uploadResult: false,
+    uploadSarif: false, // not used by the action
+    artifactName: 'qodana-report',
+    useCaches: true,
+    useAnnotations: true,
+    prMode: true,
+    postComment: true,
+    githubToken: defaultGithubToken,
+    pushFixes: 'none',
+    commitMessage: '🤖 Apply quick-fixes by Qodana',
+    useNightly: false
+  }
 }

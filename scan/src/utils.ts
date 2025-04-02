@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-import * as cache from '@actions/cache'
 import * as core from '@actions/core'
-import * as exec from '@actions/exec'
-import {ExecOutput} from '@actions/exec'
 import * as github from '@actions/github'
 import * as tc from '@actions/tool-cache'
-import artifact from '@actions/artifact'
 import {GitHub} from '@actions/github/lib/utils'
-import {Conclusion, getGitHubCheckConclusion, Output} from './annotations'
+import {getGitHubCheckConclusion, Output} from './annotations'
 import {
   BRANCH,
   compressFolder,
@@ -48,6 +44,8 @@ import * as fs from 'fs'
 import * as os from 'os'
 import {prFixesBody} from './output'
 import {COMMIT_EMAIL, COMMIT_USER, getCommentTag} from '../../common/output'
+import {qodanaGithubApi} from './qodana-github-api'
+import {ExecOptions, ExecOutput} from '@actions/exec/lib/interfaces'
 
 export const ANALYSIS_FINISHED_REACTION = '+1'
 export const ANALYSIS_STARTED_REACTION = 'eyes'
@@ -149,7 +147,7 @@ export async function qodana(
       }
     }
   }
-  const exit = await exec.getExecOutput(EXECUTABLE, args, {
+  const exit = await qodanaGithubApi.getExecOutput(EXECUTABLE, args, {
     ignoreReturnCode: true,
     env: {
       ...process.env,
@@ -177,7 +175,7 @@ export async function pushQuickFixes(
     }
 
     const currentCommit = (
-      await exec.getExecOutput('git', ['rev-parse', 'HEAD'])
+      await qodanaGithubApi.getExecOutput('git', ['rev-parse', 'HEAD'])
     ).stdout.trim()
     currentBranch = validateBranchName(currentBranch)
     await git(['config', 'user.name', COMMIT_USER])
@@ -196,7 +194,7 @@ export async function pushQuickFixes(
     if (mode === BRANCH) {
       if (pr?.head?.ref) {
         const commitToCherryPick = (
-          await exec.getExecOutput('git', ['rev-parse', 'HEAD'])
+          await qodanaGithubApi.getExecOutput('git', ['rev-parse', 'HEAD'])
         ).stdout.trim()
         await git(['checkout', currentBranch])
         await git(['cherry-pick', commitToCherryPick])
@@ -214,7 +212,9 @@ export async function pushQuickFixes(
       )
     }
   } catch (error) {
-    core.warning(`Failed to push quick fixes – ${(error as Error).message}`)
+    qodanaGithubApi.warning(
+      `Failed to push quick fixes – ${(error as Error).message}`
+    )
   }
 }
 
@@ -229,7 +229,7 @@ export async function prepareAgent(
     const expectedChecksum = getQodanaSha256(arch, platform)
     const actualChecksum = sha256sum(temp)
     if (expectedChecksum !== actualChecksum) {
-      core.setFailed(
+      qodanaGithubApi.setFailed(
         getQodanaSha256MismatchMessage(expectedChecksum, actualChecksum)
       )
     }
@@ -240,13 +240,13 @@ export async function prepareAgent(
   } else {
     extractRoot = await tc.extractTar(temp)
   }
-  core.addPath(
+  qodanaGithubApi.addPath(
     await tc.cacheDir(extractRoot, EXECUTABLE, useNightly ? 'nightly' : VERSION)
   )
   if (!isNativeMode(args)) {
     const exitCode = await qodana(getInputs(), getQodanaPullArgs(args))
     if (exitCode !== 0) {
-      core.setFailed(`qodana pull failed with exit code ${exitCode}`)
+      qodanaGithubApi.setFailed(`qodana pull failed with exit code ${exitCode}`)
       return
     }
   }
@@ -270,9 +270,15 @@ export async function uploadArtifacts(
     const workingDir = path.dirname(resultsDir)
     const archivePath = path.join(workingDir, `${artifactName}.zip`)
     await compressFolder(resultsDir, archivePath)
-    await artifact.uploadArtifact(artifactName, [archivePath], workingDir)
+    await qodanaGithubApi.uploadArtifact(
+      artifactName,
+      [archivePath],
+      workingDir
+    )
   } catch (error) {
-    core.warning(`Failed to upload report – ${(error as Error).message}`)
+    qodanaGithubApi.warning(
+      `Failed to upload report – ${(error as Error).message}`
+    )
   }
 }
 
@@ -293,21 +299,21 @@ export async function uploadCaches(
     return
   }
   if (primaryKey === reservedCacheKey) {
-    core.info(
+    qodanaGithubApi.info(
       `Cache with key ${primaryKey} already exists, skipping cache uploading...`
     )
     return
   }
   try {
-    await cache.saveCache([cacheDir], primaryKey)
+    await qodanaGithubApi.saveCache([cacheDir], primaryKey)
   } catch (error) {
     const errorMessage = (error as Error).message
     if (errorMessage.includes('Cache already exists.')) {
-      core.info(
+      qodanaGithubApi.info(
         `Cache with key ${primaryKey} already exists, skipping cache uploading...`
       )
     } else {
-      core.warning(`Failed to upload caches – ${errorMessage}`)
+      qodanaGithubApi.warning(`Failed to upload caches – ${errorMessage}`)
     }
   }
 }
@@ -330,13 +336,13 @@ export async function restoreCaches(
   }
   const restoreKeys = [additionalCacheKey].filter(k => k)
   try {
-    const cacheKey = await cache.restoreCache(
+    const cacheKey = await qodanaGithubApi.restoreCache(
       [cacheDir],
       primaryKey,
       restoreKeys
     )
     if (!cacheKey) {
-      core.info(
+      qodanaGithubApi.info(
         `No cache found for input keys: ${[primaryKey, ...restoreKeys].join(', ')}.
           With cache the pipeline would be faster.`
       )
@@ -344,7 +350,7 @@ export async function restoreCaches(
     }
     return cacheKey
   } catch (error) {
-    core.warning(
+    qodanaGithubApi.warning(
       `Failed to restore cache with key ${primaryKey} – ${(error as Error).message}`
     )
   }
@@ -359,7 +365,7 @@ export function isNeedToUploadCache(
   cacheDefaultBranchOnly: boolean
 ): boolean {
   if (!useCaches && cacheDefaultBranchOnly) {
-    core.warning(ENABLE_USE_CACHE_OPTION_WARNING)
+    qodanaGithubApi.warning(ENABLE_USE_CACHE_OPTION_WARNING)
   }
 
   if (useCaches && cacheDefaultBranchOnly) {
@@ -433,10 +439,7 @@ export async function findCommentByTag(
   tag: string
 ): Promise<number> {
   try {
-    const {data: comments} = await client.rest.issues.listComments({
-      ...github.context.repo,
-      issue_number: github.context.issue.number
-    })
+    const comments = await qodanaGithubApi.getComments(client)
     const comment = comments.find(c => c?.body?.includes(tag))
     return comment ? comment.id : -1
   } catch (error) {
@@ -575,73 +578,26 @@ export async function publishGitHubCheck(
   })
   const checkExists = result.data.check_runs.find(check => check.name === name)
   if (checkExists) {
-    await updateCheck(client, conclusion, checkExists.id, output)
+    await qodanaGithubApi.updateCheck(
+      client,
+      conclusion,
+      checkExists.id,
+      output
+    )
   } else {
-    await createCheck(client, conclusion, sha, name, output)
+    await qodanaGithubApi.createCheck(client, conclusion, sha, name, output)
   }
 }
 
-/**
- * Creates a GitHub Check.
- * @param client The Octokit REST API client to be used for creating the Check.
- * @param conclusion The conclusion to use for the GitHub Check.
- * @param head_sha The SHA of the head commit.
- * @param name The name of the Check.
- * @param output The Check Output to use.
- */
-async function createCheck(
-  client: InstanceType<typeof GitHub>,
-  conclusion: Conclusion,
-  head_sha: string,
-  name: string,
-  output: Output
-): Promise<void> {
-  await client.rest.checks.create({
-    ...github.context.repo,
-    accept: 'application/vnd.github.v3+json',
-    status: 'completed',
-    head_sha,
-    conclusion,
-    name,
-    output
-  })
-}
-
-/**
- * Updates a GitHub Check.
- * @param client The Octokit REST API client to be used for updating the Check.
- * @param conclusion The conclusion to use for the GitHub Check.
- * @param check_run_id The ID of the GitHub Check to use for the update.
- * @param output The Check Output to use.
- */
-async function updateCheck(
-  client: InstanceType<typeof GitHub>,
-  conclusion: Conclusion,
-  check_run_id: number,
-  output: Output
-): Promise<void> {
-  await client.rest.checks.update({
-    ...github.context.repo,
-    accept: 'application/vnd.github.v3+json',
-    status: 'completed',
-    conclusion,
-    check_run_id,
-    output
-  })
-}
-
-async function git(
-  args: string[],
-  options: exec.ExecOptions = {}
-): Promise<number> {
-  return (await exec.getExecOutput('git', args, options)).exitCode
+async function git(args: string[], options: ExecOptions = {}): Promise<number> {
+  return (await qodanaGithubApi.getExecOutput('git', args, options)).exitCode
 }
 
 async function gitOutput(
   args: string[],
-  options: exec.ExecOptions = {}
+  options: ExecOptions = {}
 ): Promise<ExecOutput> {
-  return exec.getExecOutput('git', args, options)
+  return qodanaGithubApi.getExecOutput('git', args, options)
 }
 
 async function createPr(
@@ -652,7 +608,7 @@ async function createPr(
 ): Promise<void> {
   const prBodyFile = path.join(os.tmpdir(), 'pr-body.txt')
   fs.writeFileSync(prBodyFile, prFixesBody(getWorkflowRunUrl()))
-  await exec.getExecOutput(
+  await qodanaGithubApi.getExecOutput(
     'gh',
     [
       'pr',

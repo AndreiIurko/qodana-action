@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-import * as core from '@actions/core'
-import * as io from '@actions/io'
 import {
   FAIL_THRESHOLD_OUTPUT,
   QodanaExitCode,
   isExecutionSuccessful,
-  extractArg
+  extractArg,
+  Inputs
 } from '../../common/qodana'
 import {
   ANALYSIS_FINISHED_REACTION,
@@ -36,15 +35,12 @@ import {
   pushQuickFixes
 } from './utils'
 import {publishOutput} from './output'
+import {qodanaGithubApi} from './qodana-github-api'
 
 // Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
 // @actions/toolkit when a failed upload closes the file descriptor causing any in-process reads to
 // throw an uncaught exception.  Instead of failing this action, just warn.
-process.on('uncaughtException', e => core.warning(e.message))
-
-function setFailed(message: string): void {
-  core.setFailed(message)
-}
+process.on('uncaughtException', e => qodanaGithubApi.warning(e.message))
 
 /**
  * Main Qodana GitHub Action entrypoint.
@@ -57,11 +53,10 @@ function setFailed(message: string): void {
  * - uploads action annotations
  * Every step except the Qodana image run is optional.
  */
-async function main(): Promise<void> {
+async function main(inputs: Inputs = getInputs()): Promise<void> {
   try {
-    const inputs = getInputs()
-    await io.mkdirP(inputs.resultsDir)
-    await io.mkdirP(inputs.cacheDir)
+    await qodanaGithubApi.mkdirP(inputs.resultsDir)
+    await qodanaGithubApi.mkdirP(inputs.cacheDir)
 
     const restoreCachesPromise = restoreCaches(
       inputs.cacheDir,
@@ -105,12 +100,12 @@ async function main(): Promise<void> {
       )
     ])
     if (!isExecutionSuccessful(exitCode)) {
-      setFailed(`qodana scan failed with exit code ${exitCode}`)
+      qodanaGithubApi.setFailed(`qodana scan failed with exit code ${exitCode}`)
     } else if (exitCode === QodanaExitCode.FailThreshold) {
-      setFailed(FAIL_THRESHOLD_OUTPUT)
+      qodanaGithubApi.setFailed(FAIL_THRESHOLD_OUTPUT)
     }
   } catch (error) {
-    setFailed((error as Error).message)
+    qodanaGithubApi.setFailed((error as Error).message)
   }
 }
 

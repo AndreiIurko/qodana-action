@@ -15,7 +15,6 @@
  */
 
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import * as core from '@actions/core'
 import {
   getCoverageFromSarif,
   QODANA_SARIF_NAME,
@@ -47,6 +46,7 @@ import {
   QODANA_CHECK_NAME,
   WARNING_LEVEL
 } from '../../common/output'
+import {qodanaGithubApi} from './qodana-github-api'
 
 export const DEPENDENCY_CHARS_LIMIT = 65000 // 65k chars is the GitHub limit for a comment
 export const VIEW_REPORT_OPTIONS = `To be able to view the detailed Qodana report, you can either:
@@ -126,11 +126,11 @@ export async function publishOutput(
         sourceDir,
         postComment
       ),
-      core.summary.addRaw(problems.summary).write(),
+      qodanaGithubApi.postSummary(problems.summary),
       publishAnnotations(jobName, problems, failedByThreshold, useAnnotations)
     ])
   } catch (error) {
-    core.warning(
+    qodanaGithubApi.warning(
       `Qodana has problems with publishing results to GitHub – ${
         (error as Error).message
       }`

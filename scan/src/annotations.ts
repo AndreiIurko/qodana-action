@@ -15,13 +15,13 @@
  */
 
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import * as core from '@actions/core'
 import {AnnotationProperties} from '@actions/core'
 import * as fs from 'fs'
 import type {Log, Result} from 'sarif'
 import {getWorkflowRunUrl, publishGitHubCheck} from './utils'
 import {getProblemPlural} from '../../common/output'
 import {parseRules, Rule} from '../../common/utils'
+import {qodanaGithubApi} from './qodana-github-api'
 
 function getQodanaHelpString(): string {
   return `This result was published with [Qodana GitHub Action](${getWorkflowRunUrl()})`
@@ -75,7 +75,7 @@ export async function publishAnnotations(
       await publishGitHubCheck(failedByThreshold, name, problems)
     }
   } catch (error) {
-    core.info(`Not able to publish annotations with Checks API – ${
+    qodanaGithubApi.info(`Not able to publish annotations with Checks API – ${
       (error as Error).message
     }, 
     using limited (10 problems per level) output instead. Check job permissions (checks: write, pull-requests: write needed)`)
@@ -83,13 +83,13 @@ export async function publishAnnotations(
       const properties = toAnnotationProperties(p)
       switch (p.annotation_level) {
         case ANNOTATION_FAILURE:
-          core.error(p.message, properties)
+          qodanaGithubApi.error(p.message, properties)
           break
         case ANNOTATION_WARNING:
-          core.warning(p.message, properties)
+          qodanaGithubApi.warning(p.message, properties)
           break
         default:
-          core.notice(p.message, properties)
+          qodanaGithubApi.notice(p.message, properties)
       }
     }
   }
