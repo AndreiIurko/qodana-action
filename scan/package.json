@@ -32,6 +32,7 @@
   "devDependencies": {
     "@types/jest": "^29.5.14",
     "@types/node": "^22.14.1",
+    "@types/sinon": "^17.0.4",
     "@typescript-eslint/parser": "^8.31.0",
     "axios": "^1.8.4",
     "esbuild": "0.25.3",
@@ -42,6 +43,7 @@
     "js-yaml": "^4.1.0",
     "nock": "^13.5.6",
     "prettier": "3.5.3",
+    "sinon": "^20.0.0",
     "ts-jest": "latest",
     "typescript": "^5.8.3"
   }

@@ -1,0 +1,109 @@
+name: 'node'
+on:
+  workflow_dispatch:
+
+  pull_request:
+    paths-ignore:
+      - 'orb/**'
+      - 'gradle/**'
+      - 'src/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle.properties'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - '.github/workflows/gradle.yml'
+  push:
+    branches:
+      - main
+      - 'releases/*'
+    paths-ignore:
+      - 'orb/**'
+      - 'gradle/**'
+      - 'src/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle.properties'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - '.github/workflows/gradle.yml'
+
+permissions:
+  contents: write
+  pull-requests: read
+  statuses: write
+
+jobs:
+  test-action:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          repository: 'JetBrains/code-analytics-examples'
+          fetch-depth: 0
+          path: 'tests'
+      - name: Remove unwanted files
+        run:
+          rm build.gradle.kts settings.gradle.kts
+        shell: bash
+      - name: Emulate pull request
+        run: |
+          git config --global user.name qodana-bot
+          git config --global user.email qodana-support@jetbrains.com
+          git init
+          git remote add origin https://github.com/JetBrains/code-analytics-examples.git
+          echo "test" > README.md
+          git add README.md
+          if [ -f ".keep" ]; then
+              while IFS= read -r file; do
+                  clean_file=$(echo "$file" | tr -d '\r' | sed 's/[[:space:]]*$//')
+                  git add "$clean_file"
+              done < ".keep"
+          else
+              echo ".keep file not found, doing nothing."
+          fi
+          git commit -m "Initial commit"
+          QODANA_PR_SHA=$(git rev-parse HEAD)
+          echo "QODANA_PR_SHA=$QODANA_PR_SHA" >> $GITHUB_ENV
+          git checkout -b new-feature
+          git add .
+          git commit -m "Add new feature"
+        working-directory: 'tests/java'
+        shell: bash
+      - name: Setup Node.js
+        id: setup-node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - name: Install dependencies
+        run: npm ci && npm run build
+      - name: Rebuild scan/dist/
+        run: cd scan && npm run package
+      - name: Prepare integration test
+        run: |
+          tsc --build .
+          ../../node_modules/.bin/esbuild lib/cache.integration.js --platform=node --keep-names --bundle --outfile=dist/index.js
+          mv dist/index.js ../dist/index.js
+        working-directory: 'scan/integrationTests'
+      - name: Qodana
+        uses: ./
+        with:
+          args: '-i,tests/java'
+          pr-mode: false
+          post-pr-comment: false
+          use-annotations: false
+          use-caches: true
+          cache-dir: '/tmp/customCacheDir'
+          primary-cache-key: 'custom-cache-key'
+          additional-cache-key: 'custom-cache-restore-key'
+        env:
+          QODANA_TOKEN: ${{ secrets.QODANA_PROJECT_TESTS_TOKEN }}
+          QODANA_PR_SHA: ${{ env.QODANA_PR_SHA }}
