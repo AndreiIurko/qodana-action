@@ -1,0 +1,201 @@
+name: 'Matrix Integration Tests'
+on:
+  workflow_dispatch:
+  pull_request:
+    paths-ignore:
+      - 'orb/**'
+      - 'gradle/**'
+      - 'src/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle.properties'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - '.github/workflows/gradle.yml'
+  push:
+    branches:
+      - main
+      - 'releases/*'
+    paths-ignore:
+      - 'orb/**'
+      - 'gradle/**'
+      - 'src/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - 'gradle.properties'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - '.github/workflows/gradle.yml'
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: write
+
+jobs:
+  matrix-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ windows-latest, ubuntu-latest ]
+        # BEWARE! For windows QDJVM hardcoded for now
+        linter: [ jvm ]
+#        linter: [ android, jvm-android, php, js, dotnet, cpp, cdnet, python, python-community, go, jvm, jvm-community, clang, ruby ]
+        pr-mode: [ true, false ]
+        use-caches: [ true, false ]
+        with-fixes: [ true, false ]
+#        macos-latest is hell to support
+#        os: [ macos-latest ]
+#        # BEWARE! For macos QDJVM hardcoded for now
+#        linter: [ jvm ]
+#        pr-mode: [ true ]
+#        use-caches: [ false ]
+#        with-fixes: [ true ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+          path: main
+
+      - uses: actions/checkout@v4
+        with:
+          repository: 'JetBrains/code-analytics-examples'
+          fetch-depth: 0
+          path: tests
+
+      - name: Setup Node.js
+        id: setup-node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: main/.node-version
+          cache-dependency-path: main
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci && npm run build
+        working-directory: 'main'
+
+      - name: Prepare integration test
+        run: |
+          ../../node_modules/.bin/tsc --build .
+          ../../node_modules/.bin/esbuild lib/matrix.integration.js --platform=node --keep-names --bundle --outfile=../dist/index.js
+        working-directory: 'main/scan/integrationTests'
+
+      - name: Set linter directory and validate linter
+        id: set-linter-dir
+        run: |
+          LINTER=${{ matrix.linter }}
+          LINTER_DIR=""
+
+          if [[ "$LINTER" == "android" || "$LINTER" == "jvm-android" || "$LINTER" == "jvm" || "$LINTER" == "jvm-community" ]]; then
+            LINTER_DIR="java"
+          elif [[ "$LINTER" == "python" || "$LINTER" == "python-community" ]]; then
+            LINTER_DIR="py_error"
+          elif [[ "$LINTER" == "dotnet" || "$LINTER" == "cdnet" ]]; then
+            LINTER_DIR="dotnet"
+          elif [[ "$LINTER" == "cpp" ]]; then
+            LINTER_DIR="cpp"
+          elif [[ "$LINTER" == "clang" ]]; then
+            LINTER_DIR="cnova"
+          elif [[ "$LINTER" == "js" ]]; then
+            LINTER_DIR="js"
+          elif [[ "$LINTER" == "go" ]]; then
+            LINTER_DIR="go"
+          elif [[ "$LINTER" == "ruby" ]]; then
+            LINTER_DIR="ruby"
+          elif [[ "$LINTER" == "php" ]]; then
+            LINTER_DIR="duplicates"
+          else
+            echo "Error: Invalid or unhandled linter value '${LINTER}'."
+            exit 1
+          fi
+
+          echo "Successfully set LINTER_DIR to ${LINTER_DIR}"
+          echo "LINTER_DIR=${LINTER_DIR}" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Set fixes
+        id: set-fixes
+        run: |
+          ARGS="-i,tests/${{ env.LINTER_DIR }}"
+          if [[ ${{ matrix.os }} == 'windows-latest' ]]; then
+            ARGS="$ARGS,--ide,QDJVM"
+          else
+            ARGS="$ARGS,--linter,jetbrains/qodana-${{ matrix.linter }}:2025.1"
+          fi
+
+          if [[ ${{ matrix.with-fixes }} ]]; then
+            ARGS="$ARGS,--apply-fixes"
+          fi
+
+          echo "ARGS=$ARGS" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Emulate pull request
+        run: |
+          git config --global user.name qodana-bot
+          git config --global user.email qodana-support@jetbrains.com
+          echo "test" > README.md
+          git add README.md
+          if [ -f ".keep" ]; then
+              while IFS= read -r file; do
+                  clean_file=$(echo "$file" | tr -d '\r' | sed 's/[[:space:]]*$//')
+                  git add "$clean_file"
+              done < ".keep"
+          else
+              echo ".keep file not found, doing nothing."
+          fi
+          git commit -m "Initial commit"
+          QODANA_PR_SHA=$(git rev-parse HEAD)
+          echo "QODANA_PR_SHA=$QODANA_PR_SHA" >> $GITHUB_ENV
+          git checkout -b new-feature
+          echo "test" > some-test.txt
+          git add .
+          git commit -m "Add new feature"
+        working-directory: 'tests/${{ env.LINTER_DIR }}'
+        shell: bash
+
+      - name: Pass matrix JSON
+        id: pass-matrix-json
+        run: |
+          MATRIX_JSON=$(cat << EOF
+          {
+            "os": "${{ matrix.os }}",
+            "linter": "${{ matrix.linter }}",
+            "prMode": "${{ matrix.pr-mode }}",
+            "useCaches": "${{ matrix.use-caches }}",
+            "withFixes": "${{ matrix.with-fixes }}"
+          }
+          EOF
+          )
+          MATRIX_JSON=$(echo "$MATRIX_JSON" | tr -d '\n' | tr -d ' ')
+          echo "MATRIX_JSON=$MATRIX_JSON" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Qodana
+        uses: ./main/
+        with:
+          args: ${{ env.ARGS }}
+          pr-mode: ${{ matrix.pr-mode }}
+          post-pr-comment: false
+          use-annotations: false
+          use-caches: ${{ matrix.use-caches }}
+          cache-dir: '/tmp/customCacheDir'
+          primary-cache-key: 'custom-cache-key'
+          additional-cache-key: 'custom-cache-restore-key'
+          push-fixes: 'none'
+        env:
+          QODANA_TOKEN: ${{ secrets.QODANA_PROJECT_TESTS_TOKEN }}
+          QODANA_PR_SHA: ${{ env.QODANA_PR_SHA }}
+          MATRIX_JSON: ${{ env.MATRIX_JSON }}
+
+      - name: Commit qodana.sarif files
+        uses: EndBug/add-and-commit@v9 # Use the latest major version
+        with:
+          cwd: 'main'
+          add: './scan/integrationTests/testData'
+          pull: '--rebase --autostash'
+          # The message for the commit
+          message: 'Add sarif files to repository'

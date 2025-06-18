@@ -5,8 +5,11 @@ import * as artifact from '@actions/artifact';
 import * as cache from '@actions/cache';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
+import * as utils from '../../src/utils';
 
 export const execSpy = sinon.spy(exec, 'getExecOutput');
+// core.info("Started to initialise inputs spy:")
+// export const getInputsSpy = sinon.spy(utils, 'getInputs')
 
 export function setupGithubArtifactMock(mockArtifactUpload: sinon.SinonStub) {
   sinon.stub(artifact.default, 'uploadArtifact').callsFake(mockArtifactUpload);
@@ -47,19 +50,19 @@ export interface ChecksRest {
 
 export function setupGithubMock(
   issues: IssuesRest = {
-    listComments: sinon.stub(),
-    createComment: sinon.stub(),
-    updateComment: sinon.stub(),
+    listComments: sinon.stub().resolves({ data: [] }),
+    createComment: sinon.stub().resolves(undefined),
+    updateComment: sinon.stub().resolves(undefined)
   },
   reactions: ReactionsRest = {
-    listForIssue: sinon.stub(),
-    deleteForIssue: sinon.stub(),
-    createForIssue: sinon.stub(),
+    listForIssue: sinon.stub().resolves({ data: [] }),
+    deleteForIssue: sinon.stub().resolves(undefined),
+    createForIssue: sinon.stub().resolves(undefined)
   },
   checks: ChecksRest = {
-    listForRef: sinon.stub(),
-    create: sinon.stub(),
-    update: sinon.stub(),
+    listForRef: sinon.stub().resolves({ data: { check_runs: [] } }),
+    create: sinon.stub().resolves(undefined),
+    update: sinon.stub().resolves(undefined)
   },
   contextToUse: Context.Context
 ) {
