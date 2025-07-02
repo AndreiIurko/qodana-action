@@ -7,14 +7,16 @@ import path from 'path'
 import * as fs from 'fs'
 
 
-type LinterCode = 'android' | 'jvm-android' | 'php' | 'js' | 'dotnet' | 'cpp' | 'cdnet' | 'python' | 'python-community' | 'go' | 'jvm' | 'jvm-community' | 'clang' | 'ruby'
+type LinterCode = 'QDAND' | 'QDANDC' | 'QDPHP' | 'QDJS' | 'QDNET' | 'QDCPP' | 'QDNETC' | 'QDPY' | 'QDPYC' | 'QDGO' | 'QDJVM' | 'QDJVMC' | 'QDCLC' | 'QDRUBY'
 
 type InputArgs = {
   os: string,
+  mode: string,
   linter: LinterCode,
   prMode: boolean,
   useCaches: boolean,
-  withFixes: string
+  withFixes: string,
+  onlySarifGen: boolean
 }
 
 // function getLinterImage(linterCode: LinterCode): string {
@@ -86,18 +88,8 @@ export async function runMatrixTest(
   //const resultsDir = getInputsSpy.returnValues[0].resultsDir
   const resultsDir = process.env.RUNNER_TEMP ? `${process.env.RUNNER_TEMP}/qodana/results` : '/tmp/qodana/results'
   const sarifSourcePath = path.join(resultsDir, QODANA_SARIF_NAME);
-
-  if (fs.existsSync(sarifSourcePath)) {
-    const sarifDestDir = path.join(__dirname, '../integrationTests/testData');
-    const sarifFileName = `qodana_${matrix.os}_${matrix.linter}_pr-${matrix.prMode}_cache-${matrix.useCaches}_fixes-${matrix.withFixes}.sarif.json`;
-    const sarifDestPath = path.join(sarifDestDir, sarifFileName)
-    if (!fs.existsSync(sarifDestDir)) {
-      fs.mkdirSync(sarifDestDir, {recursive: true})
-    }
-    fs.copyFileSync(sarifSourcePath, sarifDestPath);
-    console.log(`Saved SARIF file to ${sarifDestPath}`);
-  } else {
-    console.warn(`SARIF file not found at ${sarifSourcePath}`);
+  if (matrix.onlySarifGen) {
+    saveSarif(matrix, sarifSourcePath)
   }
 
   cleanup()
@@ -141,6 +133,21 @@ function assert(check: boolean, message: string) {
   }
 }
 
+function saveSarif(matrix: InputArgs, sarifSourcePath: string) {
+  if (fs.existsSync(sarifSourcePath)) {
+    const sarifDestDir = path.join(__dirname, '../integrationTests/testData');
+    const sarifFileName = `qodana_${matrix.os}_${matrix.mode}_${matrix.linter}_pr-${matrix.prMode}_cache-${matrix.useCaches}_fixes-${matrix.withFixes}.sarif.json`;
+    const sarifDestPath = path.join(sarifDestDir, sarifFileName)
+    if (!fs.existsSync(sarifDestDir)) {
+      fs.mkdirSync(sarifDestDir, { recursive: true })
+    }
+    fs.copyFileSync(sarifSourcePath, sarifDestPath);
+    console.log(`Saved SARIF file to ${sarifDestPath}`);
+  } else {
+    console.warn(`SARIF file not found at ${sarifSourcePath}`);
+  }
+}
+
 async function runTest(): Promise<void> {
   const matrixJson = process.env.MATRIX_JSON;
   core.info(`got ${matrixJson}`)
@@ -149,7 +156,7 @@ async function runTest(): Promise<void> {
     return
   }
   const matrix: InputArgs = JSON.parse(matrixJson);
-  core.info(`parsed matrix: ${matrix}`)
+  matrix.onlySarifGen = true
   await runMatrixTest(matrix);
 }
 

@@ -1,6 +1,13 @@
 name: 'Matrix Integration Tests'
 on:
   workflow_dispatch:
+    inputs:
+      only-sarif-gen:
+        description: "Override all sarif files used in integration test and skip the actual test"
+        required: false
+        default: true
+        type: boolean
+
   pull_request:
     paths-ignore:
       - 'orb/**'
@@ -37,21 +44,50 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ windows-latest, ubuntu-latest ]
-        # BEWARE! For windows QDJVM hardcoded for now
-        linter: [ jvm ]
+        env:
+          - os: 'windows-latest'
+            mode: 'native'
+          - os: 'macos-latest'
+            mode: 'native'
+          - os: 'ubuntu-latest'
+            mode: 'native'
+          - os: 'ubuntu-latest'
+            mode: 'docker'
+        linter:
+#          - docker: 'android'
+#            ide: 'QDAND'
+#          - docker: 'jvm-android'
+#            ide: 'QDANDC'
+#          - docker: 'php'
+#            ide: 'QDPHP'
+#          - docker: 'js'
+#            ide: 'QDJS'
+#          - docker: 'dotnet'
+#            ide: 'QDNET'
+#          - docker: 'cpp'
+#            ide: 'QDCPP'
+#          - docker: 'cdnet'
+#            ide: 'QDNETC'
+#          - docker: 'python'
+#            ide: 'QDPY'
+#          - docker: 'python-community'
+#            ide: 'QDPYC'
+#          - docker: 'go'
+#            ide: 'QDGO'
+          - docker: 'jvm'
+            ide: 'QDJVM'
+#          - docker: 'jvm-community'
+#            ide: 'QDJVMC'
+#          - docker: 'clang'
+#            ide: 'QDCLC'
+#          - docker: 'ruby'
+#            ide: 'QDRUBY'
 #        linter: [ android, jvm-android, php, js, dotnet, cpp, cdnet, python, python-community, go, jvm, jvm-community, clang, ruby ]
+#        ide: [ QDAND, QDANDC, QDPHP, QDJS, QDNET, QDCPP, QDNETC, QDPY, QDPYC, QDGO, QDJVM, QDJVMC, QDCLC, QDRUBY ]
         pr-mode: [ true, false ]
         use-caches: [ true, false ]
         with-fixes: [ true, false ]
-#        macos-latest is hell to support
-#        os: [ macos-latest ]
-#        # BEWARE! For macos QDJVM hardcoded for now
-#        linter: [ jvm ]
-#        pr-mode: [ true ]
-#        use-caches: [ false ]
-#        with-fixes: [ true ]
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.env.os }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -86,7 +122,7 @@ jobs:
       - name: Set linter directory and validate linter
         id: set-linter-dir
         run: |
-          LINTER=${{ matrix.linter }}
+          LINTER=${{ matrix.linter.docker }}
           LINTER_DIR=""
 
           if [[ "$LINTER" == "android" || "$LINTER" == "jvm-android" || "$LINTER" == "jvm" || "$LINTER" == "jvm-community" ]]; then
@@ -116,14 +152,16 @@ jobs:
           echo "LINTER_DIR=${LINTER_DIR}" >> $GITHUB_ENV
         shell: bash
 
-      - name: Set fixes
-        id: set-fixes
+      - name: Set fixes and analysis dir
+        id: set-fixes-and-analysis-dir
         run: |
           ARGS="-i,tests/${{ env.LINTER_DIR }}"
-          if [[ ${{ matrix.os }} == 'windows-latest' ]]; then
-            ARGS="$ARGS,--ide,QDJVM"
+          OS=${{ matrix.env.os }}
+          MODE=${{ matrix.env.mode }}
+          if [[ "$OS" == 'windows-latest' || "$OS" == 'macos-latest' ]]; then
+            ARGS="$ARGS,--ide,${{ matrix.linter.ide }}"
           else
-            ARGS="$ARGS,--linter,jetbrains/qodana-${{ matrix.linter }}:2025.1"
+            ARGS="$ARGS,--linter,jetbrains/qodana-${{ matrix.linter.docker }}:2025.1"
           fi
 
           if [[ ${{ matrix.with-fixes }} ]]; then
@@ -157,16 +195,18 @@ jobs:
         working-directory: 'tests/${{ env.LINTER_DIR }}'
         shell: bash
 
-      - name: Pass matrix JSON
-        id: pass-matrix-json
+      - name: Pass matrix input to test
+        id: pass-matrix-input
         run: |
           MATRIX_JSON=$(cat << EOF
           {
-            "os": "${{ matrix.os }}",
-            "linter": "${{ matrix.linter }}",
+            "os": "${{ matrix.env.os }}",
+            "mode": "${{ matrix.env.mode }}",
+            "linter": "${{ matrix.linter.ide }}",
             "prMode": "${{ matrix.pr-mode }}",
             "useCaches": "${{ matrix.use-caches }}",
-            "withFixes": "${{ matrix.with-fixes }}"
+            "withFixes": "${{ matrix.with-fixes }}",
+            "onlySarifGen": "${{ github.event.inputs.only-sarif-gen }}"
           }
           EOF
           )
@@ -182,20 +222,60 @@ jobs:
           post-pr-comment: false
           use-annotations: false
           use-caches: ${{ matrix.use-caches }}
-          cache-dir: '/tmp/customCacheDir'
-          primary-cache-key: 'custom-cache-key'
-          additional-cache-key: 'custom-cache-restore-key'
+          #primary-cache-key: ''
+          #additional-cache-key: 'custom-cache-restore-key'
           push-fixes: 'none'
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_PROJECT_TESTS_TOKEN }}
           QODANA_PR_SHA: ${{ env.QODANA_PR_SHA }}
           MATRIX_JSON: ${{ env.MATRIX_JSON }}
 
-      - name: Commit qodana.sarif files
-        uses: EndBug/add-and-commit@v9 # Use the latest major version
+      - name: Upload SARIF files as artifacts
+        uses: actions/upload-artifact@v4
+#        if: "${{ github.event.inputs.only-sarif-gen }}"
+        with:
+          name: sarif-files-${{ matrix.env.os }}-${{ matrix.env.mode }}-${{ matrix.linter.ide }}-${{ matrix.pr-mode }}-${{ matrix.use-caches }}-${{ matrix.with-fixes }}
+          path: main/scan/integrationTests/testData
+          retention-days: 1
+
+  commit-sarif-files:
+    needs: matrix-test
+    runs-on: ubuntu-latest
+#    if: "${{ github.event.inputs.only-sarif-gen }}"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+          path: main
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
+
+      - name: Prepare and sanitize SARIF files
+        shell: bash
+        run: |
+          DEST_DIR="main/scan/integrationTests/testData"
+          mkdir -p "$DEST_DIR"
+          
+          echo "Finding and processing SARIF files..."
+          find all-artifacts -name "*.sarif.json" -type f | while read -r file; do
+            # Get the original filename to use for the destination
+            filename=$(basename "$file")
+          
+            # Use jq to create a new JSON object. It preserves the schema and version
+            # but only includes the 'results' array from the first run.
+            jq '{version: .version, "$schema": ."$schema", runs: [{results: .runs[0].results, properties: .runs[0].properties}]}' "$file" > "$DEST_DIR/$filename"
+          
+            echo "Processed '$filename' and removed extra data."
+          done
+
+      - name: Commit all SARIF files
+        uses: EndBug/add-and-commit@v9
         with:
           cwd: 'main'
           add: './scan/integrationTests/testData'
           pull: '--rebase --autostash'
-          # The message for the commit
-          message: 'Add sarif files to repository'
+          message: 'Add all sarif files to repository from matrix tests'
