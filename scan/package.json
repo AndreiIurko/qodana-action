@@ -30,11 +30,13 @@
     "jszip": "^3.10.1"
   },
   "devDependencies": {
+    "@types/chai": "^5.2.2",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.14.1",
     "@types/sinon": "^17.0.4",
     "@typescript-eslint/parser": "^8.31.0",
     "axios": "^1.8.4",
+    "chai": "^5.2.0",
     "esbuild": "0.25.3",
     "eslint": "^8.57.1",
     "eslint-import-resolver-typescript": "^3.7.0",

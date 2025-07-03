@@ -2,7 +2,7 @@ name: 'Matrix Integration Tests'
 on:
   workflow_dispatch:
     inputs:
-      only-sarif-gen:
+      override-sarif:
         description: "Override all sarif files used in integration test and skip the actual test"
         required: false
         default: true
@@ -86,7 +86,10 @@ jobs:
 #        ide: [ QDAND, QDANDC, QDPHP, QDJS, QDNET, QDCPP, QDNETC, QDPY, QDPYC, QDGO, QDJVM, QDJVMC, QDCLC, QDRUBY ]
         pr-mode: [ true, false ]
         use-caches: [ true, false ]
-        with-fixes: [ true, false ]
+        fixes-mode: [ 'none', '--apply-fixes' ]
+#        pr-mode: [ false ]
+#        use-caches: [ false ]
+#        fixes-mode: [ 'none' ]
     runs-on: ${{ matrix.env.os }}
     steps:
       - uses: actions/checkout@v4
@@ -152,20 +155,18 @@ jobs:
           echo "LINTER_DIR=${LINTER_DIR}" >> $GITHUB_ENV
         shell: bash
 
-      - name: Set fixes and analysis dir
-        id: set-fixes-and-analysis-dir
+      - name: Prepare qodana args
+        id: prepare-qodana-args
         run: |
           ARGS="-i,tests/${{ env.LINTER_DIR }}"
-          OS=${{ matrix.env.os }}
-          MODE=${{ matrix.env.mode }}
-          if [[ "$OS" == 'windows-latest' || "$OS" == 'macos-latest' ]]; then
+          if [[ ${{ matrix.env.mode }} == "native" ]]; then
             ARGS="$ARGS,--ide,${{ matrix.linter.ide }}"
           else
             ARGS="$ARGS,--linter,jetbrains/qodana-${{ matrix.linter.docker }}:2025.1"
           fi
 
-          if [[ ${{ matrix.with-fixes }} ]]; then
-            ARGS="$ARGS,--apply-fixes"
+          if [[ ${{ matrix.fixes-mode }} != "none" ]]; then
+            ARGS="$ARGS,${{ matrix.fixes-mode }}"
           fi
 
           echo "ARGS=$ARGS" >> $GITHUB_ENV
@@ -203,10 +204,11 @@ jobs:
             "os": "${{ matrix.env.os }}",
             "mode": "${{ matrix.env.mode }}",
             "linter": "${{ matrix.linter.ide }}",
-            "prMode": "${{ matrix.pr-mode }}",
-            "useCaches": "${{ matrix.use-caches }}",
-            "withFixes": "${{ matrix.with-fixes }}",
-            "onlySarifGen": "${{ github.event.inputs.only-sarif-gen }}"
+            "analysisDir": "tests/${{ env.LINTER_DIR }}",
+            "prMode": ${{ matrix.pr-mode }},
+            "useCaches": ${{ matrix.use-caches }},
+            "fixesMode": "${{ matrix.fixes-mode }}",
+            "overrideSarif": true
           }
           EOF
           )
@@ -222,8 +224,7 @@ jobs:
           post-pr-comment: false
           use-annotations: false
           use-caches: ${{ matrix.use-caches }}
-          #primary-cache-key: ''
-          #additional-cache-key: 'custom-cache-restore-key'
+          primary-cache-key: "test_${{ matrix.env.os }}_${{ matrix.linter.ide }}"
           push-fixes: 'none'
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_PROJECT_TESTS_TOKEN }}
@@ -232,16 +233,16 @@ jobs:
 
       - name: Upload SARIF files as artifacts
         uses: actions/upload-artifact@v4
-#        if: "${{ github.event.inputs.only-sarif-gen }}"
+#        if: "${{ github.event.inputs.override-sarif }}"
         with:
-          name: sarif-files-${{ matrix.env.os }}-${{ matrix.env.mode }}-${{ matrix.linter.ide }}-${{ matrix.pr-mode }}-${{ matrix.use-caches }}-${{ matrix.with-fixes }}
+          name: sarif-files-${{ matrix.env.os }}-${{ matrix.env.mode }}-${{ matrix.linter.ide }}-${{ matrix.pr-mode }}-${{ matrix.use-caches }}-${{ matrix.fixes-mode }}
           path: main/scan/integrationTests/testData
           retention-days: 1
 
   commit-sarif-files:
     needs: matrix-test
     runs-on: ubuntu-latest
-#    if: "${{ github.event.inputs.only-sarif-gen }}"
+#    if: "${{ github.event.inputs.override-sarif }}"
     steps:
       - uses: actions/checkout@v4
         with:
