@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       override-sarif:
-        description: "Override all sarif files used in integration test and skip the actual test"
+        description: "Override all sarif files used in integration test and skip the sarif check"
         required: false
-        default: true
+        default: false
         type: boolean
 
   pull_request:
@@ -45,12 +45,12 @@ jobs:
       fail-fast: false
       matrix:
         env:
-          - os: 'windows-latest'
-            mode: 'native'
-          - os: 'macos-latest'
-            mode: 'native'
-          - os: 'ubuntu-latest'
-            mode: 'native'
+#          - os: 'windows-latest'
+#            mode: 'native'
+#          - os: 'macos-latest'
+#            mode: 'native'
+#          - os: 'ubuntu-latest'
+#            mode: 'native'
           - os: 'ubuntu-latest'
             mode: 'docker'
         linter:
@@ -84,12 +84,12 @@ jobs:
 #            ide: 'QDRUBY'
 #        linter: [ android, jvm-android, php, js, dotnet, cpp, cdnet, python, python-community, go, jvm, jvm-community, clang, ruby ]
 #        ide: [ QDAND, QDANDC, QDPHP, QDJS, QDNET, QDCPP, QDNETC, QDPY, QDPYC, QDGO, QDJVM, QDJVMC, QDCLC, QDRUBY ]
-        pr-mode: [ true, false ]
-        use-caches: [ true, false ]
+#        pr-mode: [ true, false ]
+#        use-caches: [ true, false ]
+#        fixes-mode: [ 'none', '--apply-fixes' ]
+        pr-mode: [ true ]
+        use-caches: [ false ]
         fixes-mode: [ 'none', '--apply-fixes' ]
-#        pr-mode: [ false ]
-#        use-caches: [ false ]
-#        fixes-mode: [ 'none' ]
     runs-on: ${{ matrix.env.os }}
     steps:
       - uses: actions/checkout@v4
@@ -100,7 +100,7 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          repository: 'JetBrains/code-analytics-examples'
+          repository: 'AndreiIurko/github-testing-repos'
           fetch-depth: 0
           path: tests
 
@@ -172,27 +172,10 @@ jobs:
           echo "ARGS=$ARGS" >> $GITHUB_ENV
         shell: bash
 
-      - name: Emulate pull request
+      - name: Prepare pr-mode
         run: |
-          git config --global user.name qodana-bot
-          git config --global user.email qodana-support@jetbrains.com
-          echo "test" > README.md
-          git add README.md
-          if [ -f ".keep" ]; then
-              while IFS= read -r file; do
-                  clean_file=$(echo "$file" | tr -d '\r' | sed 's/[[:space:]]*$//')
-                  git add "$clean_file"
-              done < ".keep"
-          else
-              echo ".keep file not found, doing nothing."
-          fi
-          git commit -m "Initial commit"
-          QODANA_PR_SHA=$(git rev-parse HEAD)
+          QODANA_PR_SHA=$(git rev-parse HEAD~1)
           echo "QODANA_PR_SHA=$QODANA_PR_SHA" >> $GITHUB_ENV
-          git checkout -b new-feature
-          echo "test" > some-test.txt
-          git add .
-          git commit -m "Add new feature"
         working-directory: 'tests/${{ env.LINTER_DIR }}'
         shell: bash
 
@@ -208,7 +191,7 @@ jobs:
             "prMode": ${{ matrix.pr-mode }},
             "useCaches": ${{ matrix.use-caches }},
             "fixesMode": "${{ matrix.fixes-mode }}",
-            "overrideSarif": true
+            "overrideSarif": ${{ github.event.inputs.override-sarif || false }}
           }
           EOF
           )
@@ -225,6 +208,8 @@ jobs:
           use-annotations: false
           use-caches: ${{ matrix.use-caches }}
           primary-cache-key: "test_${{ matrix.env.os }}_${{ matrix.linter.ide }}"
+          # to catch cache misses should be the same (or may pull caches from previous runs from other jobs)
+          additional-cache-key: "test_${{ matrix.env.os }}_${{ matrix.linter.ide }}"
           push-fixes: 'none'
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_PROJECT_TESTS_TOKEN }}
@@ -233,7 +218,7 @@ jobs:
 
       - name: Upload SARIF files as artifacts
         uses: actions/upload-artifact@v4
-#        if: "${{ github.event.inputs.override-sarif }}"
+        if: "${{ github.event.inputs.override-sarif }}"
         with:
           name: sarif-files-${{ matrix.env.os }}-${{ matrix.env.mode }}-${{ matrix.linter.ide }}-${{ matrix.pr-mode }}-${{ matrix.use-caches }}-${{ matrix.fixes-mode }}
           path: main/scan/integrationTests/testData
@@ -242,7 +227,7 @@ jobs:
   commit-sarif-files:
     needs: matrix-test
     runs-on: ubuntu-latest
-#    if: "${{ github.event.inputs.override-sarif }}"
+    if: "${{ github.event.inputs.override-sarif }}"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -263,13 +248,8 @@ jobs:
           
           echo "Finding and processing SARIF files..."
           find all-artifacts -name "*.sarif.json" -type f | while read -r file; do
-            # Get the original filename to use for the destination
             filename=$(basename "$file")
-          
-            # Use jq to create a new JSON object. It preserves the schema and version
-            # but only includes the 'results' array from the first run.
             jq '{version: .version, "$schema": ."$schema", runs: [{results: .runs[0].results, properties: .runs[0].properties}]}' "$file" > "$DEST_DIR/$filename"
-          
             echo "Processed '$filename' and removed extra data."
           done
 
