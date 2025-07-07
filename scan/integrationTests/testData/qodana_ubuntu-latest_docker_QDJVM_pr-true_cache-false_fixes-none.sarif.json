@@ -16,13 +16,13 @@
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/AppStarter.java",
+                  "uri": "src/main/java/example/Holly.java",
                   "uriBaseId": "SRCROOT"
                 },
                 "region": {
-                  "startLine": 9,
-                  "startColumn": 12,
-                  "charOffset": 210,
+                  "startLine": 77,
+                  "startColumn": 13,
+                  "charOffset": 244,
                   "charLength": 4,
                   "snippet": {
                     "text": "true"
@@ -30,9 +30,66 @@
                   "sourceLanguage": "JAVA"
                 },
                 "contextRegion": {
-                  "startLine": 7,
+                  "startLine": 75,
                   "startColumn": 1,
-                  "charOffset": 164,
+                  "charOffset": 186,
+                  "charLength": 76,
+                  "snippet": {
+                    "text": "\n    public static void main(String[] args) {\n        if (true) {\n\n        }"
+                  },
+                  "sourceLanguage": "JAVA"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project.main",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v2": "3af3e11fb40b4012",
+            "equalIndicator/v1": "3b5fcc3b1f8d635a90a07e8bd65844dbd047d7404b7f2d0e8d057f737fcf84a5"
+          },
+          "properties": {
+            "ideaSeverity": "WARNING",
+            "qodanaSeverity": "High",
+            "problemType": "REGULAR",
+            "tags": [
+              "JAVA"
+            ]
+          }
+        },
+        {
+          "ruleId": "ConstantValue",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "Condition is always true",
+            "markdown": "Condition is always true"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/example/AppStarter.java",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 12,
+                  "startColumn": 12,
+                  "charOffset": 256,
+                  "charLength": 4,
+                  "snippet": {
+                    "text": "true"
+                  },
+                  "sourceLanguage": "JAVA"
+                },
+                "contextRegion": {
+                  "startLine": 10,
+                  "startColumn": 1,
+                  "charOffset": 210,
                   "charLength": 64,
                   "snippet": {
                     "text": "        int a ;\n        int b = a;\n        if(true) {\n\n        }"
@@ -49,8 +106,122 @@
             }
           ],
           "partialFingerprints": {
-            "equalIndicator/v2": "308fc8a3189f86e9",
-            "equalIndicator/v1": "7ab5f42dac9df2ca89bad77e7e7256d2f209f41eba21f523df38adb11b946465"
+            "equalIndicator/v2": "c69bd6656db9d946",
+            "equalIndicator/v1": "c1d1c8e5c11f27a7db95d53346b2bfb76d10f9f86225f2f3a4a1e5e4ba35a4c6"
+          },
+          "properties": {
+            "ideaSeverity": "WARNING",
+            "qodanaSeverity": "High",
+            "problemType": "REGULAR",
+            "tags": [
+              "JAVA"
+            ]
+          }
+        },
+        {
+          "ruleId": "ConstantValue",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "Condition is always true",
+            "markdown": "Condition is always true"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/example/Holly.java",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 96,
+                  "startColumn": 13,
+                  "charOffset": 559,
+                  "charLength": 4,
+                  "snippet": {
+                    "text": "true"
+                  },
+                  "sourceLanguage": "JAVA"
+                },
+                "contextRegion": {
+                  "startLine": 94,
+                  "startColumn": 1,
+                  "charOffset": 471,
+                  "charLength": 106,
+                  "snippet": {
+                    "text": "    public String getUsername() {\n        String username = getUserInput();\n        if (true) {\n\n        }"
+                  },
+                  "sourceLanguage": "JAVA"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project.main",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v2": "d26562212ec04265",
+            "equalIndicator/v1": "e452a4dd928bead804422ab8bda830758b8f938b43ea977bebff4c77311dfb0f"
+          },
+          "properties": {
+            "ideaSeverity": "WARNING",
+            "qodanaSeverity": "High",
+            "problemType": "REGULAR",
+            "tags": [
+              "JAVA"
+            ]
+          }
+        },
+        {
+          "ruleId": "ConstantValue",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "Condition is always false",
+            "markdown": "Condition is always false"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/example/Holly.java",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 86,
+                  "startColumn": 13,
+                  "charOffset": 379,
+                  "charLength": 5,
+                  "snippet": {
+                    "text": "false"
+                  },
+                  "sourceLanguage": "JAVA"
+                },
+                "contextRegion": {
+                  "startLine": 84,
+                  "startColumn": 1,
+                  "charOffset": 296,
+                  "charLength": 140,
+                  "snippet": {
+                    "text": "    override fun startEngine() {\n        println(\"Car engine started\")\n        if (false) {\n            kotlin.io.println(\"BBBBB\")\n        }"
+                  },
+                  "sourceLanguage": "JAVA"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project.main",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v2": "af318e9d0aac7606",
+            "equalIndicator/v1": "ed4a90da23d1f3dc410222b1d1d2c76bc3d62f3c35edcca00520a91de80a3465"
           },
           "properties": {
             "ideaSeverity": "WARNING",
@@ -73,13 +244,13 @@
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/main/java/AppStarter.java",
+                  "uri": "src/main/java/example/Holly.java",
                   "uriBaseId": "SRCROOT"
                 },
                 "region": {
-                  "startLine": 9,
+                  "startLine": 96,
                   "startColumn": 9,
-                  "charOffset": 207,
+                  "charOffset": 555,
                   "charLength": 2,
                   "snippet": {
                     "text": "if"
@@ -87,9 +258,66 @@
                   "sourceLanguage": "JAVA"
                 },
                 "contextRegion": {
-                  "startLine": 7,
+                  "startLine": 94,
                   "startColumn": 1,
-                  "charOffset": 164,
+                  "charOffset": 471,
+                  "charLength": 106,
+                  "snippet": {
+                    "text": "    public String getUsername() {\n        String username = getUserInput();\n        if (true) {\n\n        }"
+                  },
+                  "sourceLanguage": "JAVA"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project.main",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v2": "5489920ba3b0840c",
+            "equalIndicator/v1": "00fda564406a5391b3f9dea86456f848ee76c614cfead371239ae37f8e2f1e9f"
+          },
+          "properties": {
+            "ideaSeverity": "WARNING",
+            "qodanaSeverity": "High",
+            "problemType": "REGULAR",
+            "tags": [
+              "JAVA"
+            ]
+          }
+        },
+        {
+          "ruleId": "EmptyStatementBody",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "'if' statement has empty body",
+            "markdown": "`if` statement has empty body"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/example/AppStarter.java",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 12,
+                  "startColumn": 9,
+                  "charOffset": 253,
+                  "charLength": 2,
+                  "snippet": {
+                    "text": "if"
+                  },
+                  "sourceLanguage": "JAVA"
+                },
+                "contextRegion": {
+                  "startLine": 10,
+                  "startColumn": 1,
+                  "charOffset": 210,
                   "charLength": 64,
                   "snippet": {
                     "text": "        int a ;\n        int b = a;\n        if(true) {\n\n        }"
@@ -106,8 +334,236 @@
             }
           ],
           "partialFingerprints": {
-            "equalIndicator/v2": "18d08bd24fbbd8e3",
-            "equalIndicator/v1": "380f3748530d6e1aa9f516b65bbf0880795b663626d99e059578e6a33810e8b3"
+            "equalIndicator/v2": "3ca7d2aed3564234",
+            "equalIndicator/v1": "8f821ee2265ac30ede2bb2cab02033f145da3118b24d1e326e20ac0fdace2a60"
+          },
+          "properties": {
+            "ideaSeverity": "WARNING",
+            "qodanaSeverity": "High",
+            "problemType": "REGULAR",
+            "tags": [
+              "JAVA"
+            ]
+          }
+        },
+        {
+          "ruleId": "EmptyStatementBody",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "'if' statement has empty body",
+            "markdown": "`if` statement has empty body"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/example/Holly.java",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 77,
+                  "startColumn": 9,
+                  "charOffset": 240,
+                  "charLength": 2,
+                  "snippet": {
+                    "text": "if"
+                  },
+                  "sourceLanguage": "JAVA"
+                },
+                "contextRegion": {
+                  "startLine": 75,
+                  "startColumn": 1,
+                  "charOffset": 186,
+                  "charLength": 76,
+                  "snippet": {
+                    "text": "\n    public static void main(String[] args) {\n        if (true) {\n\n        }"
+                  },
+                  "sourceLanguage": "JAVA"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project.main",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v2": "2831e0337b4db785",
+            "equalIndicator/v1": "98c475daa1a45a425c6164f21dd8e16321b68eb41f1b287c277c2b9a89ce42be"
+          },
+          "properties": {
+            "ideaSeverity": "WARNING",
+            "qodanaSeverity": "High",
+            "problemType": "REGULAR",
+            "tags": [
+              "JAVA"
+            ]
+          }
+        },
+        {
+          "ruleId": "InnerClassMayBeStatic",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "Inner class 'Holly' may be 'static'",
+            "markdown": "Inner class `Holly` may be 'static'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/example/Holly.java",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 5,
+                  "startColumn": 14,
+                  "charOffset": 64,
+                  "charLength": 5,
+                  "snippet": {
+                    "text": "Holly"
+                  },
+                  "sourceLanguage": "JAVA"
+                },
+                "contextRegion": {
+                  "startLine": 3,
+                  "startColumn": 1,
+                  "charOffset": 18,
+                  "charLength": 100,
+                  "snippet": {
+                    "text": "import java.util.stream.Stream;\n\npublic class Holly {\n    public static String stroong = \"sdfkmsd\";\n"
+                  },
+                  "sourceLanguage": "JAVA"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project.main",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v2": "d31c860a293d608e",
+            "equalIndicator/v1": "16f7f5987582be524e077b527c51a88330242525e93b77735eab370622856e1e"
+          },
+          "properties": {
+            "ideaSeverity": "WARNING",
+            "qodanaSeverity": "High",
+            "problemType": "REGULAR",
+            "tags": [
+              "JAVA"
+            ]
+          }
+        },
+        {
+          "ruleId": "InnerClassMayBeStatic",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "Inner class 'Car' may be 'static'",
+            "markdown": "Inner class `Car` may be 'static'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/example/Holly.java",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 83,
+                  "startColumn": 7,
+                  "charOffset": 278,
+                  "charLength": 3,
+                  "snippet": {
+                    "text": "Car"
+                  },
+                  "sourceLanguage": "JAVA"
+                },
+                "contextRegion": {
+                  "startLine": 81,
+                  "startColumn": 1,
+                  "charOffset": 269,
+                  "charLength": 97,
+                  "snippet": {
+                    "text": "}\n\nclass Car : Vehicle() {\n    override fun startEngine() {\n        println(\"Car engine started\")"
+                  },
+                  "sourceLanguage": "JAVA"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project.main",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v2": "dd7d0dd7d67a8634",
+            "equalIndicator/v1": "68589d15c23520915e0c99cfb2c5df9ed8148cae64b60dd72b55a84b0512156f"
+          },
+          "properties": {
+            "ideaSeverity": "WARNING",
+            "qodanaSeverity": "High",
+            "problemType": "REGULAR",
+            "tags": [
+              "JAVA"
+            ]
+          }
+        },
+        {
+          "ruleId": "InnerClassMayBeStatic",
+          "kind": "fail",
+          "level": "warning",
+          "message": {
+            "text": "Inner class 'UserUtil' may be 'static'",
+            "markdown": "Inner class `UserUtil` may be 'static'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/java/example/Holly.java",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 92,
+                  "startColumn": 14,
+                  "charOffset": 459,
+                  "charLength": 8,
+                  "snippet": {
+                    "text": "UserUtil"
+                  },
+                  "sourceLanguage": "JAVA"
+                },
+                "contextRegion": {
+                  "startLine": 90,
+                  "startColumn": 1,
+                  "charOffset": 443,
+                  "charLength": 61,
+                  "snippet": {
+                    "text": "}\n\npublic class UserUtil {\n\n    public String getUsername() {"
+                  },
+                  "sourceLanguage": "JAVA"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "project.main",
+                  "kind": "module"
+                }
+              ]
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v2": "02644ec92e1b812f",
+            "equalIndicator/v1": "c1b553fde7b70f4bb86bdb59f5a101b18db7f4ba57ed0c7070b7ed8214984a9b"
           },
           "properties": {
             "ideaSeverity": "WARNING",
@@ -120,11 +576,70 @@
         }
       ],
       "properties": {
+        "qodana.sanity.results": [
+          {
+            "ruleId": "QodanaJavaSanity",
+            "kind": "fail",
+            "level": "error",
+            "message": {
+              "text": "Unresolved reference override",
+              "markdown": "Unresolved reference override"
+            },
+            "locations": [
+              {
+                "physicalLocation": {
+                  "artifactLocation": {
+                    "uri": "src/main/java/example/Holly.java",
+                    "uriBaseId": "SRCROOT"
+                  },
+                  "region": {
+                    "startLine": 84,
+                    "startColumn": 5,
+                    "charOffset": 300,
+                    "charLength": 8,
+                    "snippet": {
+                      "text": "override"
+                    },
+                    "sourceLanguage": "JAVA"
+                  },
+                  "contextRegion": {
+                    "startLine": 82,
+                    "startColumn": 1,
+                    "charOffset": 271,
+                    "charLength": 116,
+                    "snippet": {
+                      "text": "\nclass Car : Vehicle() {\n    override fun startEngine() {\n        println(\"Car engine started\")\n        if (false) {"
+                    },
+                    "sourceLanguage": "JAVA"
+                  }
+                },
+                "logicalLocations": [
+                  {
+                    "fullyQualifiedName": "project.main",
+                    "kind": "module"
+                  }
+                ]
+              }
+            ],
+            "partialFingerprints": {
+              "equalIndicator/v2": "798501060e3fb4d4",
+              "equalIndicator/v1": "f701c20c07f632f4fa45e7672eaf08aa1758bc40af5a6678b0b38221c0760124"
+            },
+            "properties": {
+              "ideaSeverity": "ERROR",
+              "qodanaSeverity": "Critical",
+              "problemType": "REGULAR",
+              "tags": [
+                "JAVA"
+              ]
+            }
+          }
+        ],
         "configProfile": "absent",
         "deviceId": "200820300000000-c704-79de-63ce-9c23748a99b0",
         "qodanaNewResultSummary": {
-          "high": 2,
-          "total": 2
+          "high": 10,
+          "total": 10
         }
       }
     }
